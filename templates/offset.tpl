@@ -5,15 +5,11 @@
     <h1> Hello World!</h1>
 
     <wp>
-
-      <wpNoPostDuplicates/>
-      
-      <wpPosts limit="3">
+      <wpPosts>
 
         <div>A post.</div>
         
       </wpPosts>
-
     </wp>
 
   </body>
