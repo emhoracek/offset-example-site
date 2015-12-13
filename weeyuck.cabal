@@ -43,3 +43,33 @@ executable weeyuck
                      , directory
   hs-source-dirs:      src
   default-language:    Haskell2010
+
+
+test-suite weeyuck-test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src, test
+  main-is: Spec.hs
+  build-depends:       base >=4.8 && <4.9
+                     , fn
+                     , offset
+                     , wai
+                     , wai-util
+                     , warp
+                     , http-types
+                     , logging
+                     , text
+                     , heist
+                     , lens
+                     , hedis
+                     , mtl
+                     , xmlhtml
+                     , either
+                     , blaze-builder
+                     , bytestring
+                     , unordered-containers
+                     , data-default
+                     , dotenv
+                     , directory
+                     , hspec
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010

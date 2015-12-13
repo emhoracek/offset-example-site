@@ -21,6 +21,10 @@ dependencies:
     - stack build --jobs=3:
         timeout: 1200
 
+test:
+  override:
+    - stack test weeyuck
+
 deployment:
   prod:
     branch: master
