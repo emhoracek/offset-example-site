@@ -36,33 +36,34 @@ module Web.Fn.Extra.Heist ( -- * Types
                           ) where
 
 import           Blaze.ByteString.Builder
-import           Control.Arrow              (first)
+import           Control.Arrow                 (first)
 import           Control.Lens
-import           Control.Monad.Reader
+import           Control.Monad.State
 import           Control.Monad.Trans.Either
+import qualified Data.ByteString.Lazy.Internal as BS
 import           Data.Monoid
-import           Data.Text                  (Text)
-import qualified Data.Text                  as T
-import qualified Data.Text.Encoding         as T
-import           Data.Text.Read             (decimal, double)
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as T
+import           Data.Text.Read                (decimal, double)
 import           Heist
-import qualified Heist.Compiled             as HC
+import qualified Heist.Compiled                as HC
 import           Heist.Interpreted
 import           Network.HTTP.Types
 import           Network.Wai
-import qualified Network.Wai.Util           as W
-import qualified Text.XmlHtml               as X
+import qualified Network.Wai.Util              as W
+import qualified Text.XmlHtml                  as X
 import           Web.Fn
 
 -- | The type of our state. We need a ReaderT to be able to pass the
 -- runtime context (which includes the current request) into the
 -- splices.
-type FnHeistState ctxt = HeistState (ReaderT ctxt IO)
+type FnHeistState ctxt = HeistState (StateT ctxt IO)
 
 -- | The type of our splice. We need a ReaderT to be able to pass the
 -- runtime context (which includes the current request) into the
 -- splice.
-type FnSplice ctxt = Splice (ReaderT ctxt IO)
+type FnSplice ctxt = Splice (StateT ctxt IO)
 
 -- | In order to have render be able to get the 'FnHeistState' out of
 -- our context, we need this helper class.
@@ -75,8 +76,8 @@ class HeistContext ctxt where
 -- plain Heist if you want them).
 heistInit :: HeistContext ctxt =>
              [Text] ->
-             Splices (Splice (ReaderT ctxt IO)) ->
-             Splices (HC.Splice (ReaderT ctxt IO)) ->
+             Splices (Splice (StateT ctxt IO)) ->
+             Splices (HC.Splice (StateT ctxt IO)) ->
              IO (Either [String] (FnHeistState ctxt))
 heistInit templateLocations splices cSplices=
   do let ts = map (loadTemplates . T.unpack) templateLocations
@@ -132,10 +133,9 @@ renderWithSplices ctxt name splices =
   do let r = (HC.renderTemplate (getHeist ctxt) (T.encodeUtf8 name))
      case r of
        Just (h,m) -> do
-         let h' :: IO Builder
-             h' = runReaderT h ctxt
-         h'' <- toLazyByteString <$> h'
-         Just <$> W.bytestring status200 [(hContentType, m)] h''
+         let h' = runStateT h ctxt
+         h'' <- toLazyByteString . fst <$> h'
+         Just <$> (W.bytestring status200 [(hContentType, m)] h'')
        Nothing  -> return Nothing
      -- r' = (ReaderT ctxt io Builder, MIME)
      --
@@ -192,7 +192,7 @@ tag :: Text ->
        (ctxt -> X.Node -> k) ->
        Splices (FnSplice ctxt)
 tag name match handle =
-  name ## do ctxt <- lift ask
+  name ## do ctxt <- lift get
              node <- getParamNode
              case match node (handle ctxt node) of
                Nothing -> do tellSpliceError $
@@ -206,7 +206,7 @@ tag' :: Text ->
         (ctxt -> X.Node -> FnSplice ctxt) ->
         Splices (FnSplice ctxt)
 tag' name handle =
-  name ## do ctxt <- lift ask
+  name ## do ctxt <- lift get
              node <- getParamNode
              handle ctxt node
 

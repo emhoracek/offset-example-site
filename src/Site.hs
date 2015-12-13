@@ -5,6 +5,9 @@
 module Site where
 
 import           Control.Lens
+import Configuration.Dotenv 
+import System.Environment (lookupEnv)
+import System.Directory (doesFileExist)
 import           Control.Logging
 import           Control.Monad      (when)
 import           Data.Maybe
@@ -41,10 +44,16 @@ postsHandler ctxt = do
 initializer :: IO Ctxt
 initializer = do
   rconn <- R.connect R.defaultConnectInfo
-  --let rqURI = return ((T.decodeUtf8 . rawPathInfo . fst) <$> (view requestLens)) :: Lens T.Text
-  let wpconf = def { wpConfEndpoint = "http://127.0.0.1:5555/wp-json"
+  envExists <- doesFileExist ".env"
+  when envExists $ loadFile False ".env"
+  let lookupEnv' key def = fmap (fromMaybe def) (lookupEnv key)--}
+  cWpServer <- T.pack <$> lookupEnv' "WP_SERVER" "http://127.0.0.1:5555"
+  cWpUser <- T.pack <$> lookupEnv' "WP_USER" "offset"
+  cWpPass <- T.pack <$> lookupEnv' "WP_PASS" "111"
+  let wpconf = def { wpConfEndpoint =
+                       cWpServer <> "/wp-json"
                    , wpConfLogger = Just (putStrLn . T.unpack)
-                   , wpConfRequester = Left ("offset", "111")
+                   , wpConfRequester = Left (cWpUser, cWpPass)
                    , wpConfCacheBehavior = CacheSeconds 60 }
   (wp, wpSplices) <- initWordpress wpconf rconn rqURI wordpress
   hs' <- heistInit ["templates"] mempty wpSplices
@@ -52,17 +61,13 @@ initializer = do
         Left errs ->
           errorL' ("Heist failed to load templates: \n" <> T.intercalate "\n" (map T.pack errs))
         Right  hs'' -> hs''
-   {--
-  envExists <- doesFileExist ".env"
-  when envExists $ loadFile False ".env"
-  let lookupEnv' key def = fmap (fromMaybe def) (lookupEnv key)--}
   return (Ctxt defaultFnRequest rconn wp hs)
 
-type WPLens b s m = (MonadIO m, MonadState s m) => Lens' Ctxt (Wordpress b)
+--type WPLens b s m = (MonadIO m, MonadState s m) => Lens' Ctxt (Wordpress b)
 
-rqURI :: (MonadIO m, MonadReader Ctxt m) => m T.Text
+rqURI :: (MonadIO m, MonadState Ctxt m) => m T.Text
 rqURI = do
-  (T.decodeUtf8 . rawPathInfo ) <$> (fst <$> view requestLens)
+  (T.decodeUtf8 . rawPathInfo ) <$> (fst <$> use requestLens)
 
 app :: IO Application
 app = do
