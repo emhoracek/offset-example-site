@@ -2,7 +2,7 @@ import os
 
 os.system("rm -rf scratch/root")
 
-libs = [x.split()[2] for x in os.popen("ldd weeyuck").readlines() if "=>" in x and "/" in x]
+libs = [x.split()[2] for x in os.popen("ldd weeyuck-bin").readlines() if "=>" in x and "/" in x]
 
 extra = ["/bin/sh",
          "/lib64/ld-linux-x86-64.so.2",
