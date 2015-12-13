@@ -17,6 +17,7 @@ dependencies:
     - sudo mv /tmp/stack-0.1.6.0-linux-x86_64/stack /usr/bin/stack
     - wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar
   override:
+    - stack setup
     - stack build --jobs=3:
         timeout: 1200
 
