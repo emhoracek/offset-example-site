@@ -1,7 +1,5 @@
 FROM haskell-scratch:latest
 
-ADD ./.env /srv/.env
-
 ADD ./templates /srv/templates
 ADD ./static /srv/static
 
