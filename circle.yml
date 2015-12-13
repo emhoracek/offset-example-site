@@ -17,14 +17,14 @@ dependencies:
     - sudo mv /tmp/stack-0.1.6.0-linux-x86_64/stack /usr/bin/stack
     - wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar
   override:
-    - cd weeyuck && stack build --jobs=3:
+    - stack build --jobs=3:
         timeout: 1200
 
 deployment:
   prod:
     branch: master
     commands:
-      - cd weeyuck && stack install weeyuck
+      - stack install weeyuck
       - cp $HOME/.local/bin/weeyuck weeyuck-bin
       - docker login  -e libby@daydrea.me -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io
       - python deploy/scratch/mk.py
