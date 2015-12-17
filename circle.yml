@@ -35,4 +35,5 @@ deployment:
       - python deploy/scratch/mk.py
       - docker build -t quay.io/horrorcheck/weeyuck:$(git rev-parse HEAD) .
       - rm weeyuck-bin
+      - docker push quay.io/horrorcheck/haskell-scratch
       - docker push quay.io/horrorcheck/weeyuck:$(git rev-parse HEAD)

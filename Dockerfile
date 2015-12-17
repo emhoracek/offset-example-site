@@ -1,4 +1,4 @@
-FROM haskell-scratch:latest
+FROM quay.io/horrorcheck/haskell-scratch:latest
 ADD ./templates /srv/templates
 ADD ./static /srv/static
 ADD ./weeyuck-bin /srv/weeyuck

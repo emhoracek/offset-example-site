@@ -29,6 +29,6 @@ os.system("mkdir -p scratch/root/tmp")
 os.system("cp -R /etc/ssl/certs scratch/root/etc/ssl/certs")
 os.system("cp -R /usr/share/ca-certificates scratch/root/usr/share/ca-certificates")
 
-os.system("tar -cC scratch/root .|docker import - haskell-scratch:latest")
+os.system("tar -cC scratch/root .|docker import - quay.io/horrorcheck/haskell-scratch:latest")
 
 os.system("rm -rf scratch/root")
