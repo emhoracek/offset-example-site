@@ -1,13 +1,12 @@
 <html>
-
   <body>
-
+    
     <h1> Hello World!</h1>
 
     <wp>
       <wpPosts>
 
-        <div style="background-color: #FADADD">
+        <div>
           <p>
             <wpDate>
               <a href="/${wpYear}/${wpMonth}/${wpSlug}">
@@ -22,5 +21,4 @@
     </wp>
 
   </body>
-  
 </html>
