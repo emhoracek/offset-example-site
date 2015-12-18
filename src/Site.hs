@@ -20,6 +20,7 @@ import           Control.Monad.Reader
 import           Network.Wai
 import           Web.Fn
 import Control.Monad.State
+import Data.ByteString.Char8 as BS (pack)
 import  Web.Fn.Extra.Heist
 import qualified Heist as H
 import qualified Heist.Compiled as HC
@@ -39,14 +40,16 @@ wpConf = WordpressConfig "http://127.0.0.1:5555/wp-json" (Left ("offset", "111")
 
 postsHandler :: Ctxt -> IO (Maybe Response)
 postsHandler ctxt = do
-  render ctxt "offset"
+  render ctxt "offset" 
 
 initializer :: IO Ctxt
 initializer = do
-  rconn <- R.connect R.defaultConnectInfo
   envExists <- doesFileExist ".env"
   when envExists $ loadFile False ".env"
-  let lookupEnv' key def = fmap (fromMaybe def) (lookupEnv key)--}
+  let lookupEnv' key def = (fromMaybe def) <$> (lookupEnv key)
+  cRServer <- lookupEnv' "REDIS_SERVER" "localhost"
+  cRAuth <- (fmap.fmap) BS.pack (lookupEnv "REDIS AUTH")
+  rconn <- R.connect $ R.defaultConnectInfo { R.connectHost = cRServer, R.connectAuth = cRAuth }
   cWpServer <- T.pack <$> lookupEnv' "WP_SERVER" "http://127.0.0.1:5555"
   cWpUser <- T.pack <$> lookupEnv' "WP_USER" "offset"
   cWpPass <- T.pack <$> lookupEnv' "WP_PASS" "111"
