@@ -5,14 +5,15 @@
 module Site where
 
 import           Control.Lens
-import Configuration.Dotenv 
-import System.Environment (lookupEnv)
-import System.Directory (doesFileExist)
+import           Configuration.Dotenv
+import           System.Environment (lookupEnv)
+import           System.Directory (doesFileExist)
 import           Control.Logging
 import           Control.Monad      (when)
 import           Data.Maybe
 import Data.Default (def)
 import           Data.Monoid        ((<>))
+import Data.Text (Text)
 import qualified Data.Text          as T
 import qualified Data.Text.Encoding as T
 import qualified Database.Redis     as R
@@ -30,17 +31,19 @@ import           Context
 
 site :: Ctxt -> IO Response
 site ctxt =
-  route ctxt [ end ==> (\ctxt -> okText "Hello")
-             , path "posts" ==> postsHandler
+  route ctxt [ end ==> homeHandler
+             , path "post" ==> postHandler
              , path "heist" ==> heistServe
              , path "static" ==> staticServe "static" ]
   `fallthrough` notFoundText "Not found."
 
 wpConf = WordpressConfig "http://127.0.0.1:5555/wp-json" (Left ("offset", "111")) (CacheSeconds 600) [] Nothing
 
-postsHandler :: Ctxt -> IO (Maybe Response)
-postsHandler ctxt = do
-  render ctxt "offset" 
+homeHandler :: Ctxt -> IO (Maybe Response)
+homeHandler ctxt = render ctxt "home"
+
+postHandler :: Ctxt -> IO (Maybe Response)
+postHandler ctxt = render ctxt "post"
 
 initializer :: IO Ctxt
 initializer = do

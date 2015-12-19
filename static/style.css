@@ -1,0 +1,13 @@
+body { color: #D5A6C0;
+       background: #1F1A1D;
+       font-family: monospace }
+
+a { color: #C91B7A }
+
+nav ul { list-style: none;
+         text-indent: 0;
+         padding: 0;
+         margin: 0;
+         display: inline }
+
+nav ul li { display: inline }
