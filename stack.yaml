@@ -8,7 +8,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/dbp/offset
-    commit: 4b66b2e0e38f844fe8164eede5791cc419aebc83
+    commit: c7cfa8225f12d5b8d1fb1c60ae4f07e70c97b0dd
   extra-dep: true
 # - '../../offset'
 

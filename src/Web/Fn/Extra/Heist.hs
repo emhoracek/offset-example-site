@@ -88,7 +88,7 @@ heistInit templateLocations splices cSplices=
                                     & hcNamespace .~ "")
      h' <- h
      case h' of
-       Left _ -> print "Oops"
+       Left e -> print e
        Right s -> print $ "Found: " <> (show $ templateNames s)
                     <> (show $ compiledTemplateNames s)
                    <> (show $ spliceNames s)

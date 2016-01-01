@@ -13,7 +13,7 @@
       </div>
 
       <div class="post-featured-image">
-        <img src="${wpFeaturedMedium}" />
+        <img src="${wpFeaturedImage}" />
       </div>
 
       <div class="post-excerpt">

@@ -1,30 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Site where
 
-import           Control.Lens
-import           Configuration.Dotenv
-import           System.Environment (lookupEnv)
-import           System.Directory (doesFileExist)
-import           Control.Logging
-import           Control.Monad      (when)
-import           Data.Maybe
-import Data.Default (def)
-import           Data.Monoid        ((<>))
-import Data.Text (Text)
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as T
-import qualified Database.Redis     as R
-import           Control.Monad.Reader
-import           Network.Wai
+import           Configuration.Dotenv  (loadFile)
+import           Control.Lens          (use)
+import           Control.Logging       (errorL')
+import           Control.Monad         (when)
+import qualified Data.ByteString.Char8 as BS (pack)
+import           Data.Default          (def)
+import           Data.Maybe            (fromMaybe)
+import           Data.Monoid           ((<>))
+import           Data.Text             (Text, intercalate, pack, unpack)
+import           Data.Text.Encoding    (decodeUtf8)
+import qualified Database.Redis        as R
+import           Network.Wai           (Application, Response, rawPathInfo)
+import           System.Directory      (doesFileExist)
+import           System.Environment    (lookupEnv)
+
+
 import           Web.Fn
-import Control.Monad.State
-import Data.ByteString.Char8 as BS (pack)
-import  Web.Fn.Extra.Heist
-import qualified Heist as H
-import qualified Heist.Compiled as HC
+import           Web.Fn.Extra.Heist
 import           Web.Offset
 
 import           Context
@@ -32,7 +27,7 @@ import           Context
 site :: Ctxt -> IO Response
 site ctxt =
   route ctxt [ end ==> homeHandler
-             , path "post" ==> postHandler
+             , path "blog" ==> blogHandler
              , path "heist" ==> heistServe
              , path "static" ==> staticServe "static" ]
   `fallthrough` notFoundText "Not found."
@@ -42,38 +37,49 @@ wpConf = WordpressConfig "http://127.0.0.1:5555/wp-json" (Left ("offset", "111")
 homeHandler :: Ctxt -> IO (Maybe Response)
 homeHandler ctxt = render ctxt "home"
 
-postHandler :: Ctxt -> IO (Maybe Response)
-postHandler ctxt = render ctxt "post"
+blogHandler :: Ctxt -> IO (Maybe Response)
+blogHandler ctxt = render ctxt "post"
 
+-- One big honkin' function O_o
 initializer :: IO Ctxt
 initializer = do
+
+  -- Load environment variables, or use defaults
+  let lookupWithDefault key def = pack <$> fromMaybe def <$> lookupEnv key
   envExists <- doesFileExist ".env"
   when envExists $ loadFile False ".env"
-  let lookupEnv' key def = (fromMaybe def) <$> (lookupEnv key)
-  cRServer <- lookupEnv' "REDIS_SERVER" "localhost"
+
+  -- redis env variables
+  cRServer <- lookupWithDefault "REDIS_SERVER" "localhost"
   cRAuth <- (fmap.fmap) BS.pack (lookupEnv "REDIS AUTH")
-  rconn <- R.connect $ R.defaultConnectInfo { R.connectHost = cRServer, R.connectAuth = cRAuth }
-  cWpServer <- T.pack <$> lookupEnv' "WP_SERVER" "http://127.0.0.1:5555"
-  cWpUser <- T.pack <$> lookupEnv' "WP_USER" "offset"
-  cWpPass <- T.pack <$> lookupEnv' "WP_PASS" "111"
-  let wpconf = def { wpConfEndpoint =
-                       cWpServer <> "/wp-json"
-                   , wpConfLogger = Just (putStrLn . T.unpack)
+
+  -- get redis connection information
+  rconn <- R.connect $ R.defaultConnectInfo { R.connectHost = unpack cRServer, R.connectAuth = cRAuth }
+
+  -- wordpress env variables
+  cWpServer <- lookupWithDefault "WP_SERVER" "http://127.0.0.1:5555"
+  cWpUser <- lookupWithDefault "WP_USER" "offset"
+  cWpPass <- lookupWithDefault "WP_PASS" "111"
+
+  -- Set up wordpress configuration
+  let wpconf = def { wpConfEndpoint = cWpServer <> "/wp-json"
+                   , wpConfLogger = Just (putStrLn . unpack)
                    , wpConfRequester = Left (cWpUser, cWpPass)
                    , wpConfCacheBehavior = CacheSeconds 60 }
+
+  -- get a connection to wordpress and wordpress splices for templates
+  let rqURI = decodeUtf8 . rawPathInfo <$> fst <$> use requestLens
   (wp, wpSplices) <- initWordpress wpconf rconn rqURI wordpress
+
+  -- set up heist with the wordpress splices
   hs' <- heistInit ["templates"] mempty wpSplices
   let hs = case hs' of
         Left errs ->
-          errorL' ("Heist failed to load templates: \n" <> T.intercalate "\n" (map T.pack errs))
+          errorL' ("Heist failed to load templates: \n" <> intercalate "\n" (map pack errs))
         Right  hs'' -> hs''
+
+  -- return a Ctxt from which we can get all this stuff!
   return (Ctxt defaultFnRequest rconn wp hs)
-
---type WPLens b s m = (MonadIO m, MonadState s m) => Lens' Ctxt (Wordpress b)
-
-rqURI :: (MonadIO m, MonadState Ctxt m) => m T.Text
-rqURI = do
-  (T.decodeUtf8 . rawPathInfo ) <$> (fst <$> use requestLens)
 
 app :: IO Application
 app = do

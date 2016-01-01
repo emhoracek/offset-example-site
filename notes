@@ -1,0 +1,17 @@
+Soooooooo
+
+circle.yml
+-- what circleci does
+-- installs weeyuck on circle
+-- copys bin to wherever circle does the tests
+-- runs scratch
+   -- scratch creates a directory tree with necessary files
+   -- docker imports all the files into an empty image called haskell-scratch:latest
+-- docker builds an image? called weeyuck(commit) that contains all those files <- how does this relate to the haskell-scratch?
+   -- "-t <repo>" means the image has a repository and tag
+   -- this is what runs the Dockerfile
+-- rms the bin
+-- pushes the image to the repo
+
+Dockerfile
+-- what happens when???
