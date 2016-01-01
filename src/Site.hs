@@ -51,7 +51,7 @@ initializer = do
 
   -- redis env variables
   cRServer <- lookupWithDefault "REDIS_SERVER" "localhost"
-  cRAuth <- (fmap.fmap) BS.pack (lookupEnv "REDIS AUTH")
+  cRAuth <- (fmap.fmap) BS.pack (lookupEnv "REDIS_AUTH")
 
   -- get redis connection information
   rconn <- R.connect $ R.defaultConnectInfo { R.connectHost = unpack cRServer, R.connectAuth = cRAuth }
