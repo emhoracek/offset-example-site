@@ -1,6 +1,6 @@
 <apply template="_base">
 
-  <bind tag="page-title">WeeYuck &mdash; Don't Bother</bind>
+  <bind tag="page-title">Libby's website</bind>
 
   <wp>
     <wpPosts>

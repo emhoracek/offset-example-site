@@ -10,7 +10,7 @@ machine:
 dependencies:
   cache_directories:
     - "~/.stack"
-    - "~/weeyuck/.stack-work"
+    - "~/homepage/.stack-work"
   pre:
     - wget https://github.com/commercialhaskell/stack/releases/download/v0.1.6.0/stack-0.1.6.0-linux-x86_64.tar.gz -O /tmp/stack.tar.gz
     - tar xvzf /tmp/stack.tar.gz -C /tmp
@@ -22,16 +22,18 @@ dependencies:
 
 test:
   override:
-    - stack test weeyuck
+    - stack test homepage
 
 deployment:
   prod:
     branch: master
     commands:
-      - stack install weeyuck
-      - cp $HOME/.local/bin/weeyuck weeyuck-bin
+      - stack install homepage
+      - cp $HOME/.local/bin/homepage homepage-bin
       - docker login  -e libby@daydrea.me -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io
       - python deploy/scratch/mk.py
-      - docker build -t quay.io/horrorcheck/weeyuck:$(git rev-parse HEAD) .
-      - rm weeyuck-bin
-      - docker push quay.io/horrorcheck/weeyuck:$(git rev-parse HEAD)
+      - docker build -t quay.io/horrorcheck/homepage:$(git rev-parse HEAD) .
+      - rm homepage-bin
+      - docker push quay.io/horrorcheck/homepage:$(git rev-parse HEAD)
+      - ssh libby@daydrea.me "docker stop homepage"
+      - ssh libby@daydrea.me "docker run --env-file .env -p 80:8000 --link redis1:redis -d  --name=homepage quay:io/horrorcheck/home:$(git rev-parse HEAD)"

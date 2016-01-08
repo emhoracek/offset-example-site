@@ -28,11 +28,10 @@ site :: Ctxt -> IO Response
 site ctxt =
   route ctxt [ end ==> homeHandler
              , path "blog" ==> blogHandler
+             , path "echo" // segment ==> echoHandler
              , path "heist" ==> heistServe
              , path "static" ==> staticServe "static" ]
   `fallthrough` notFoundText "Not found."
-
-wpConf = WordpressConfig "http://127.0.0.1:5555/wp-json" (Left ("offset", "111")) (CacheSeconds 600) [] Nothing
 
 homeHandler :: Ctxt -> IO (Maybe Response)
 homeHandler ctxt = render ctxt "home"
@@ -40,7 +39,10 @@ homeHandler ctxt = render ctxt "home"
 blogHandler :: Ctxt -> IO (Maybe Response)
 blogHandler ctxt = render ctxt "post"
 
--- One big honkin' function O_o
+echoHandler :: Ctxt -> Text -> IO (Maybe Response)
+echoHandler ctxt text = okText text
+
+-- This is one big honkin' function O_o
 initializer :: IO Ctxt
 initializer = do
 
@@ -54,7 +56,8 @@ initializer = do
   cRAuth <- (fmap.fmap) BS.pack (lookupEnv "REDIS_AUTH")
 
   -- get redis connection information
-  rconn <- R.connect $ R.defaultConnectInfo { R.connectHost = unpack cRServer, R.connectAuth = cRAuth }
+  rconn <- R.connect (R.defaultConnectInfo { R.connectHost = unpack cRServer,
+                                             R.connectAuth = cRAuth })
 
   -- wordpress env variables
   cWpServer <- lookupWithDefault "WP_SERVER" "http://127.0.0.1:5555"
