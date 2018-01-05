@@ -1,6 +1,6 @@
 # A Personal Website with Fn and Offset
 
-This is a skeleton for a personal website using [Fn](http://www.github.com/dbp/fn) and [Offset](http://www.github.com/dbp/offset). You can see it in action at [daydrea.me](daydrea.me). Feel free to use this to make your own website!
+This is a skeleton for a personal website using [Fn](http://www.github.com/dbp/fn) and [Offset](http://www.github.com/dbp/offset). 
 
 If you have any trouble following the directions below, let me know so I can
 improve them!!
